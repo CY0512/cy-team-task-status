@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Arrangement</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">CY Team</p>
+        <h1>Task Arrangement</h1>
+        <h2 id="date-heading"></h2>
+      </div>
+      <nav class="actions" aria-label="Task navigation">
+        <button id="previous-day" type="button">Previous Day</button>
+        <button id="today" type="button">Today</button>
+        <button id="next-day" type="button">Next Day</button>
+        <button id="add-client" class="primary" type="button">+ Add Client</button>
+        <button id="client-database" type="button">Client Database</button>
+      </nav>
+    </header>
+
+    <section class="summary" aria-label="Daily summary">
+      <strong>Total: <span id="total-count">0</span></strong>
+      <span>Pending: <span id="pending-count">0</span></span>
+      <span>Need to Assist / Help: <span id="help-count">0</span></span>
+      <span>Done: <span id="done-count">0</span></span>
+    </section>
+
+    <section id="table-container" class="table-wrap" aria-live="polite"></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
