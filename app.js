@@ -19,8 +19,28 @@ const formatDate = (date) => new Intl.DateTimeFormat("en-GB", {
 
 function ensureDay() {
   const key = dateKey(state.date);
-  if (!state.days.has(key)) state.days.set(key, []);
+  if (!state.days.has(key)) {
+    const previous = getPreviousDay(key);
+    const carried = previous
+      ? previous.filter((task) => task.task.trim() && task.status !== "Done")
+        .map((task) => ({ ...task, id: crypto.randomUUID(), carried: true }))
+      : [];
+    const carriedClients = new Set(carried.map((task) => task.client));
+    const newClientRows = state.clients
+      .filter((client) => !carriedClients.has(client))
+      .map((client) => newTask(client));
+    state.days.set(key, [...carried, ...newClientRows]);
+  }
   return state.days.get(key);
+}
+
+function getPreviousDay(key) {
+  const dates = [...state.days.keys()].filter((date) => date < key).sort();
+  return dates.length ? state.days.get(dates[dates.length - 1]) : null;
+}
+
+function newTask(client) {
+  return { id: crypto.randomUUID(), client, task: "", status: "Pending", remark: "" };
 }
 
 function save() {
@@ -76,8 +96,11 @@ function render() {
     (groups[task.client] ||= []).push(task);
     return groups;
   }, {});
-  const rows = Object.entries(grouped).flatMap(([client, clientTasks], index) =>
-    clientTasks.map((task, taskIndex) => `
+  const priority = (task) => task.status === "Pending" ? 0 : task.status.startsWith("Need") ? 1 : 2;
+  const orderedGroups = Object.entries(grouped).sort(([, left], [, right]) =>
+    priority(left[0]) - priority(right[0]));
+  const rows = orderedGroups.flatMap(([client, clientTasks], index) =>
+    clientTasks.sort((left, right) => priority(left) - priority(right)).map((task, taskIndex) =>
       <tr data-id="${task.id}">
         ${taskIndex === 0 ? `<td class="no" rowspan="${clientTasks.length}">${index + 1}</td><td class="client" rowspan="${clientTasks.length}" contenteditable="true" data-field="client">${escapeHtml(client)}</td>` : ""}
         <td class="task ${rowClass(task)}"><div contenteditable="true" data-field="task">${escapeHtml(task.task)}</div>${taskIndex === clientTasks.length - 1 ? '<div class="row-tools"><button class="add-task" type="button">+ Add Task</button></div>' : ""}</td>
@@ -115,7 +138,9 @@ function bindTable() {
     });
     const add = row.querySelector(".add-task");
     if (add) add.addEventListener("click", () => {
-      tasks.splice(tasks.indexOf(task) + 1, 0, { id: crypto.randomUUID(), client: task.client, task: "", status: "Pending", remark: "" });
+      const clientTasks = tasks.filter((item) => item.client === task.client);
+      const lastClientTask = clientTasks[clientTasks.length - 1];
+      tasks.splice(tasks.indexOf(lastClientTask) + 1, 0, newTask(task.client));
       save(); render();
     });
   });
@@ -131,6 +156,19 @@ document.querySelector("#add-client").addEventListener("click", () => {
   if (!state.clients.includes(name.trim())) state.clients.push(name.trim());
   save(); render();
 });
+setInterval(async () => {
+  if (document.hidden || !API_URL) return;
+  try {
+    const response = await fetch(`${API_URL}?t=${Date.now()}`);
+    if (!response.ok) throw new Error(`Online refresh failed: ${response.status}`);
+    const stored = await response.json();
+    state.days = new Map(Object.entries(stored.days || {}));
+    state.clients = stored.clients || [];
+    render();
+  } catch (error) {
+    console.error("Online refresh failed:", error);
+  }
+}, 30000);
 load().then(render).catch((error) => {
   console.error(error);
   render();
