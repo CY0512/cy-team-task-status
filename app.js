@@ -1,175 +1,41 @@
-const STATUSES = ["Pending", "Need to Assist / Help", "Done"];
-// Replace this with the Google Apps Script deployment URL after deployment.
-const API_URL = "https://script.google.com/macros/s/AKfycbxvtXDhDIiF1sHhlNvKnSGO6IGl85LG9-_hpgYPe5Kgpwf6FFOs4Zzb2LjHaX4Txb4/exec";
-const state = {
-  date: new Date(),
-  days: new Map(),
-  clients: [],
-};
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Arrangement</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">CY Team</p>
+        <h1>Task Arrangement</h1>
+        <h2 id="date-heading"></h2>
+      </div>
+      <nav class="actions" aria-label="Task navigation">
+        <button id="previous-day" type="button">Previous Day</button>
+        <button id="today" type="button">Today</button>
+        <button id="next-day" type="button">Next Day</button>
+        <button id="add-client" class="primary" type="button">+ Add Client</button>
+        <button id="client-database" type="button">Client Database</button>
+      </nav>
+    </header>
 
-const dateKey = (date) => date.toISOString().slice(0, 10);
-const formatDate = (date) => new Intl.DateTimeFormat("en-GB", {
-  weekday: "long", day: "numeric", month: "long", year: "numeric",
-}).format(date).replace(/^(\w+), (\d+)(?= )/, (_, day, number) => {
-  const suffix = number.endsWith("1") && number !== "11" ? "st"
-    : number.endsWith("2") && number !== "12" ? "nd"
-    : number.endsWith("3") && number !== "13" ? "rd" : "th";
-  return `${day}, ${number}${suffix}`;
-});
+    <section class="summary" aria-label="Daily summary">
+      <strong>Total: <span id="total-count">0</span></strong>
+      <span>Pending: <span id="pending-count">0</span></span>
+      <span>Need to Assist / Help: <span id="help-count">0</span></span>
+      <span>Done: <span id="done-count">0</span></span>
+    </section>
 
-function ensureDay() {
-  const key = dateKey(state.date);
-  if (!state.days.has(key)) {
-    const previous = getPreviousDay(key);
-    const carried = previous
-      ? previous.filter((task) => task.task.trim() && task.status !== "Done")
-        .map((task) => ({ ...task, id: crypto.randomUUID(), carried: true }))
-      : [];
-    const carriedClients = new Set(carried.map((task) => task.client));
-    const newClientRows = state.clients
-      .filter((client) => !carriedClients.has(client))
-      .map((client) => newTask(client));
-    state.days.set(key, [...carried, ...newClientRows]);
-  }
-  return state.days.get(key);
-}
-
-function getPreviousDay(key) {
-  const dates = [...state.days.keys()].filter((date) => date < key).sort();
-  return dates.length ? state.days.get(dates[dates.length - 1]) : null;
-}
-
-function newTask(client) {
-  return { id: crypto.randomUUID(), client, task: "", status: "Pending", remark: "" };
-}
-
-function save() {
-  const payload = {
-    days: Object.fromEntries(state.days), clients: state.clients,
-  };
-  localStorage.setItem("cy-team-task-status", JSON.stringify(payload));
-  if (API_URL) {
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    }).catch((error) => console.error("Online save failed:", error));
-  }
-}
-
-async function load() {
-  if (API_URL) {
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error(`Online load failed: ${response.status}`);
-    const stored = await response.json();
-    state.days = new Map(Object.entries(stored.days || {}));
-    state.clients = stored.clients || [];
-    return;
-  }
-  const stored = JSON.parse(localStorage.getItem("cy-team-task-status") || "null");
-  if (!stored) return;
-  state.days = new Map(Object.entries(stored.days || {}));
-  state.clients = stored.clients || [];
-}
-
-function updateSummary(tasks) {
-  const counts = tasks.reduce((result, task) => {
-    result[task.status] = (result[task.status] || 0) + 1;
-    return result;
-  }, {});
-  document.querySelector("#total-count").textContent = tasks.length;
-  document.querySelector("#pending-count").textContent = counts.Pending || 0;
-  document.querySelector("#help-count").textContent = counts["Need to Assist / Help"] || 0;
-  document.querySelector("#done-count").textContent = counts.Done || 0;
-}
-
-function render() {
-  const tasks = ensureDay();
-  document.querySelector("#date-heading").textContent = formatDate(state.date);
-  updateSummary(tasks);
-  const container = document.querySelector("#table-container");
-  if (!tasks.length) {
-    container.innerHTML = '<div class="empty">No clients yet. Select “+ Add Client” to begin.</div>';
-    return;
-  }
-  const grouped = tasks.reduce((groups, task) => {
-    (groups[task.client] ||= []).push(task);
-    return groups;
-  }, {});
-  const priority = (task) => task.status === "Pending" ? 0 : task.status.startsWith("Need") ? 1 : 2;
-  const orderedGroups = Object.entries(grouped).sort(([, left], [, right]) =>
-    priority(left[0]) - priority(right[0]));
-  const rows = orderedGroups.flatMap(([client, clientTasks], index) =>
-    clientTasks.sort((left, right) => priority(left) - priority(right)).map((task, taskIndex) =>
-      <tr data-id="${task.id}">
-        ${taskIndex === 0 ? `<td class="no" rowspan="${clientTasks.length}">${index + 1}</td><td class="client" rowspan="${clientTasks.length}" contenteditable="true" data-field="client">${escapeHtml(client)}</td>` : ""}
-        <td class="task ${rowClass(task)}"><div contenteditable="true" data-field="task">${escapeHtml(task.task)}</div>${taskIndex === clientTasks.length - 1 ? '<div class="row-tools"><button class="add-task" type="button">+ Add Task</button></div>' : ""}</td>
-        <td class="status ${rowClass(task)}"><select class="status-select" data-field="status">${STATUSES.map(status => `<option ${status === task.status ? "selected" : ""}>${status}</option>`).join("")}</select></td>
-        <td class="remark ${rowClass(task)}"><div class="remark-value ${task.remark ? "" : "null"}" contenteditable="true" data-field="remark">${escapeHtml(task.remark || "NULL")}</div><button class="delete-task" type="button">Delete</button></td>
-      </tr>`)).join("");
-  container.innerHTML = `<table><thead><tr><th>No.</th><th>Client</th><th>Task</th><th>Status</th><th>Remark</th></tr></thead><tbody>${rows}</tbody></table>`;
-  bindTable();
-}
-
-function rowClass(task) {
-  return task.carried && task.status !== "Done" ? "carried" : task.status === "Done" ? "done" : task.status.startsWith("Need") ? "help" : "";
-}
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
-}
-function bindTable() {
-  const tasks = ensureDay();
-  document.querySelectorAll("tr[data-id]").forEach((row) => {
-    const task = tasks.find((item) => item.id === row.dataset.id);
-    row.querySelectorAll("[data-field]").forEach((field) => {
-      field.addEventListener("blur", () => {
-        let value = field.textContent.trim();
-        if (field.dataset.field === "remark" && value === "NULL") value = "";
-        task[field.dataset.field] = value;
-        save(); render();
-      });
-    });
-    row.querySelector("select").addEventListener("change", (event) => {
-      task.status = event.target.value; task.carried = false; save(); render();
-    });
-    row.querySelector(".delete-task").addEventListener("click", () => {
-      state.days.set(dateKey(state.date), tasks.filter((item) => item.id !== task.id));
-      save(); render();
-    });
-    const add = row.querySelector(".add-task");
-    if (add) add.addEventListener("click", () => {
-      const clientTasks = tasks.filter((item) => item.client === task.client);
-      const lastClientTask = clientTasks[clientTasks.length - 1];
-      tasks.splice(tasks.indexOf(lastClientTask) + 1, 0, newTask(task.client));
-      save(); render();
-    });
-  });
-}
-
-document.querySelector("#previous-day").addEventListener("click", () => { state.date.setDate(state.date.getDate() - 1); render(); });
-document.querySelector("#next-day").addEventListener("click", () => { state.date.setDate(state.date.getDate() + 1); render(); });
-document.querySelector("#today").addEventListener("click", () => { state.date = new Date(); render(); });
-document.querySelector("#add-client").addEventListener("click", () => {
-  const name = prompt("Client name");
-  if (!name?.trim()) return;
-  ensureDay().push({ id: crypto.randomUUID(), client: name.trim(), task: "", status: "Pending", remark: "" });
-  if (!state.clients.includes(name.trim())) state.clients.push(name.trim());
-  save(); render();
-});
-setInterval(async () => {
-  if (document.hidden || !API_URL) return;
-  try {
-    const response = await fetch(`${API_URL}?t=${Date.now()}`);
-    if (!response.ok) throw new Error(`Online refresh failed: ${response.status}`);
-    const stored = await response.json();
-    state.days = new Map(Object.entries(stored.days || {}));
-    state.clients = stored.clients || [];
-    render();
-  } catch (error) {
-    console.error("Online refresh failed:", error);
-  }
-}, 30000);
-load().then(render).catch((error) => {
-  console.error(error);
-  render();
-});
+    <section id="table-container" class="table-wrap" aria-live="polite"></section>
+    <section class="today-task-actions" aria-label="Today task actions">
+      <button id="add-today-task" class="today-task-button" type="button">+ Add Task for Today</button>
+    </section>
+    <section id="client-database-panel" class="client-database-panel" hidden></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
