@@ -1,4 +1,4 @@
-# CY Team Task Status
+CY Team Task Status
 
 This is the starter web application for the internal daily task arrangement system.
 
@@ -10,5 +10,7 @@ This is the starter web application for the internal daily task arrangement syst
 4. Select **Deploy > New deployment**, choose **Web app**, execute as **Me**, and allow access to **Anyone with the link**.
 5. Copy the deployment URL into `API_URL` at the top of `app.js`.
 6. Open `index.html` again. Changes will now be saved to the Sheet and shared between computers.
+
+Clients are retained in the app's client list. When a new date is opened, unfinished tasks are copied first and existing clients without carried tasks receive a blank task row. Tasks are ordered Pending, Need to Assist / Help, then Done. Open pages refresh from the online data every 30 seconds.
 
 The current starter also keeps a browser copy as a fallback. Google Drive image uploads will be added after the Sheet connection is confirmed.
