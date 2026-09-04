@@ -1,42 +1,41 @@
-:root {
-  color-scheme: light;
-  font-family: Arial, sans-serif;
-  color: #17202a;
-  background: #f4f6f8;
-}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Arrangement</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">CY Team</p>
+        <h1>Task Arrangement</h1>
+        <h2 id="date-heading"></h2>
+      </div>
+      <nav class="actions" aria-label="Task navigation">
+        <button id="previous-day" type="button">Previous Day</button>
+        <button id="today" type="button">Today</button>
+        <button id="next-day" type="button">Next Day</button>
+        <button id="add-client" class="primary" type="button">+ Add Client</button>
+        <button id="client-database" type="button">Client Database</button>
+      </nav>
+    </header>
 
-* { box-sizing: border-box; }
-body { margin: 0; }
-.app-shell { max-width: 1400px; margin: 0 auto; padding: 28px; }
-.page-header { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
-.eyebrow { margin: 0 0 6px; color: #496b88; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
-h1 { margin: 0; font-size: 30px; text-transform: uppercase; }
-h2 { margin: 8px 0 0; font-size: 19px; font-weight: 500; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: end; }
-button { border: 1px solid #bbc6d0; border-radius: 5px; background: white; padding: 9px 12px; cursor: pointer; }
-button:hover { background: #eaf0f5; }
-button.primary { border-color: #245b86; color: white; background: #245b86; }
-.summary { display: flex; flex-wrap: wrap; gap: 22px; margin: 28px 0 12px; padding: 14px 16px; border: 1px solid #d2dae1; border-radius: 6px; background: white; }
-.table-wrap { overflow-x: auto; border: 1px solid #aebbc5; background: white; }
-table { width: 100%; border-collapse: collapse; min-width: 850px; }
-th, td { border: 1px solid #c7d0d8; padding: 10px; vertical-align: top; }
-th { background: #e8edf1; text-align: left; }
-th:first-child, td.no { width: 56px; text-align: center; vertical-align: middle; }
-td.client { width: 190px; font-weight: 700; vertical-align: middle; }
-td.task, td.status, td.remark { background: white; }
-td.help { background: #fff2ae; }
-td.done { background: #c9ebcd; }
-td.carried { background: #f4b5b5; }
-[contenteditable="true"] { outline: none; min-height: 22px; white-space: pre-wrap; }
-[contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px #5b9bd5; }
-.status-select { width: 100%; border: 0; background: transparent; font: inherit; }
-.remark-value.null { color: #71808c; }
-.row-tools { display: flex; gap: 8px; margin-top: 8px; }
-.add-task, .delete-task { border: 0; padding: 3px 6px; font-size: 12px; }
-.delete-task { color: #a52b2b; }
-.empty { padding: 36px; text-align: center; color: #647482; }
-@media (max-width: 850px) {
-  .app-shell { padding: 16px; }
-  .page-header { align-items: start; flex-direction: column; }
-  .actions { justify-content: start; }
-}
+    <section class="summary" aria-label="Daily summary">
+      <strong>Total: <span id="total-count">0</span></strong>
+      <span>Pending: <span id="pending-count">0</span></span>
+      <span>Need to Assist / Help: <span id="help-count">0</span></span>
+      <span>Done: <span id="done-count">0</span></span>
+    </section>
+
+    <section id="table-container" class="table-wrap" aria-live="polite"></section>
+    <section class="today-task-actions" aria-label="Today task actions">
+      <button id="add-today-task" class="today-task-button" type="button">+ Add Task for Today</button>
+    </section>
+    <section id="client-database-panel" class="client-database-panel" hidden></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
