@@ -1,0 +1,54 @@
+ho<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="choose-child" class="login-screen">
+    <section class="card login-card">
+      <p class="eyebrow">Study tracker</p>
+      <h1>Who is studying? 👋</h1>
+      <p>Choose your name to open your study dashboard.</p>
+      <div class="child-options">
+        <button type="button" data-child="Delson">Delson</button>
+        <button type="button" data-child="Hong Yi">Hong Yi</button>
+      </div>
+      <p id="login-message" class="message"></p>
+    </section>
+  </main>
+  <main class="app" hidden>
+    <header class="topbar">
+      <div><p class="eyebrow">Study tracker</p><h1>Hi, <span id="child-name">Student</span>! 👋</h1></div>
+      <label class="child-picker">Student<select id="child"></select></label>
+    </header>
+    <section id="home" class="screen visible">
+      <div class="card streak"><span>🌟</span><div><strong>Keep your study streak going!</strong><small>Every session counts.</small></div></div>
+      <section class="card"><h2>What are you studying today?</h2><div id="subjects" class="subjects"></div><button id="start" class="primary">Start study session</button></section>
+      <section id="recent" class="card"><h2>Recent sessions</h2><div id="recent-list" class="sessions"></div></section>
+      <section class="card"><h2>🏆 Weekly study time</h2><div class="table-scroll"><table><thead><tr><th>Day</th><th>Delson</th><th>Hong Yi</th></tr></thead><tbody id="weekly"></tbody></table></div></section>
+    </section>
+    <section id="timer" class="screen timer-layout">
+      <div class="card centered timer-panel">
+        <p class="eyebrow">Now studying</p>
+        <h2 id="timer-subject"></h2>
+        <div id="clock">00:00:00</div>
+        <p class="timer-caption">STUDY TIME</p>
+        <p class="encouragement">💪 You're doing great! Keep going!</p>
+        <button id="finish" class="primary">🔴 Finish study</button>
+      </div>
+      <div class="card timer-dashboard">
+        <h2>🏆 Weekly Study Time</h2>
+        <p id="week-label" class="week-label"></p>
+        <div class="table-scroll"><table><thead><tr><th>Day</th><th>Delson<br><small>(This week study time)</small></th><th>Hong Yi<br><small>(This week study time)</small></th></tr></thead><tbody id="timer-weekly"></tbody><tfoot id="timer-weekly-average"></tfoot></table></div>
+      </div>
+    </section>
+    <section id="complete" class="screen card"><h2>🎉 Great work!</h2><p>Add a short note about what you learned.</p><textarea id="learned" rows="5" placeholder="Today I learned..."></textarea><label class="upload">📷 Add a photo<input id="photo" type="file" accept="image/*"></label><img id="preview" alt="Selected study photo"><div class="actions"><button id="cancel">Cancel</button><button id="save" class="primary">Save session</button></div></section>
+    <p id="message" class="message" role="status"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
